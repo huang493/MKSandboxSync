@@ -1,3 +1,4 @@
+#if DEBUG
 #if canImport(UIKit)
 
 import SwiftUI
@@ -61,4 +62,5 @@ private struct MKSDebugUIText: View {
     }
 }
 
+#endif
 #endif

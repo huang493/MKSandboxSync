@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 import Network
 
@@ -178,3 +179,4 @@ enum MKSHTTPParser {
         )
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 
 enum MKSPlistValueCoding {
@@ -52,3 +53,4 @@ enum MKSPlistValueCoding {
         }
     }
 }
+#endif

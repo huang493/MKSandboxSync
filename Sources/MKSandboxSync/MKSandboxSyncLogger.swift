@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 
 public final class MKSandboxSyncLogger {
@@ -29,3 +30,4 @@ struct MKSandboxLogRecord: Codable {
     let date: Date
     let message: String
 }
+#endif

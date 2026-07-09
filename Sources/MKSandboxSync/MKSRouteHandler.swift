@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 
 final class MKSRouteHandler {
@@ -248,3 +249,4 @@ struct MKSDefaultsMutation {
         return MKSDefaultsMutation(key: key, value: MKSPlistValueCoding.denormalize(value))
     }
 }
+#endif

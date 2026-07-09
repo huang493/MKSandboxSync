@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 
 enum MKSandboxSyncError: LocalizedError {
@@ -19,3 +20,4 @@ enum MKSandboxSyncError: LocalizedError {
         }
     }
 }
+#endif

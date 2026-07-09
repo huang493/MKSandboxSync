@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 
 final class MKSUserDefaultsProvider {
@@ -75,3 +76,4 @@ struct MKSAnyCodable: Encodable {
         }
     }
 }
+#endif

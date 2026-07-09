@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 
 struct MKSHTTPRequest {
@@ -97,3 +98,4 @@ private struct MKSErrorPayload: Codable {
     let ok: Bool
     let error: String
 }
+#endif

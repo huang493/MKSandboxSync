@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 
 public final class MKSandboxSync {
@@ -99,3 +100,4 @@ public extension MKSandboxSync {
         }
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 
 final class MKSFileProvider {
@@ -213,3 +214,4 @@ private extension PropertyListSerialization.PropertyListFormat {
         }
     }
 }
+#endif

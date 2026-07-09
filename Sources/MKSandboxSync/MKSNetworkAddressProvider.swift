@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 
 #if canImport(Darwin)
@@ -70,3 +71,4 @@ enum MKSNetworkAddressProvider {
         return 3
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 
 enum MKSWebConsolePage {
@@ -1160,3 +1161,4 @@ enum MKSWebConsolePage {
 </html>
 """
 }
+#endif

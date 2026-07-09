@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 
 public struct MKSandboxSyncConfiguration {
@@ -113,3 +114,4 @@ public struct MKSWebConsoleShortcut: Hashable {
         return path.hasPrefix("/") ? path : "/" + path
     }
 }
+#endif
