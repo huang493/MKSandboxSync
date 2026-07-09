@@ -10,14 +10,14 @@ final class MKSUserDefaultsProvider {
     func snapshot() -> [String: MKSAnyCodable] {
         defaults.dictionaryRepresentation()
             .filter { MKSAnyCodable.isSupported($0.value) }
-            .mapValues { MKSAnyCodable($0) }
+            .mapValues { MKSAnyCodable(MKSPlistValueCoding.normalize($0)) }
     }
 
     func set(key: String, value: Any) throws {
         guard MKSAnyCodable.isSupported(value) else {
             throw MKSandboxSyncError.unsupportedDefaultsValue
         }
-        defaults.set(value, forKey: key)
+        defaults.set(MKSPlistValueCoding.denormalize(value), forKey: key)
         MKSandboxSyncLogger.shared.log("Set UserDefaults key \(key).")
     }
 
@@ -47,8 +47,10 @@ struct MKSAnyCodable: Encodable {
             try container.encode(Double(value))
         case let value as Bool:
             try container.encode(value)
+        case let value as Data:
+            try container.encode(MKSPlistValueCoding.normalize(value) as? [String: String] ?? [:])
         case let value as Date:
-            try container.encode(value)
+            try container.encode(MKSPlistValueCoding.normalize(value) as? [String: String] ?? [:])
         case let value as [Any]:
             try container.encode(value.map(MKSAnyCodable.init))
         case let value as [String: Any]:
@@ -62,7 +64,7 @@ struct MKSAnyCodable: Encodable {
 
     static func isSupported(_ value: Any) -> Bool {
         switch value {
-        case is String, is Int, is Double, is Float, is Bool, is Date, is NSNull:
+        case is String, is Int, is Double, is Float, is Bool, is Date, is Data, is NSNull:
             return true
         case let array as [Any]:
             return array.allSatisfy(isSupported)

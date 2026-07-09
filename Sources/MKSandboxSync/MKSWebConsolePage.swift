@@ -38,20 +38,31 @@ enum MKSWebConsolePage {
     }
     header strong { font-size: 17px; }
     header span { color: var(--muted); font-size: 12px; }
+    .brand {
+      margin-left: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
     main {
       display: grid;
       grid-template-columns: 280px minmax(320px, 1fr);
       min-height: calc(100vh - 56px);
     }
     aside {
+      display: flex;
+      flex-direction: column;
       border-right: 1px solid var(--line);
       background: var(--panel);
       padding: 14px;
-      overflow: auto;
+      overflow: hidden;
     }
     section {
+      display: flex;
+      flex-direction: column;
       padding: 18px;
       min-width: 0;
+      min-height: 0;
     }
     .toolbar {
       display: flex;
@@ -94,6 +105,12 @@ enum MKSWebConsolePage {
       border-radius: 6px;
       min-width: 260px;
     }
+    .tree {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      margin-bottom: 12px;
+    }
     .tree button {
       width: 100%;
       text-align: left;
@@ -118,9 +135,14 @@ enum MKSWebConsolePage {
       border-radius: 8px;
       overflow: hidden;
     }
+    .listing {
+      flex: 0 0 280px;
+      min-height: 280px;
+      overflow: auto;
+    }
     .row {
       display: grid;
-      grid-template-columns: 1fr 96px 160px 88px;
+      grid-template-columns: 1fr 96px 160px 168px;
       gap: 10px;
       align-items: center;
       padding: 9px 12px;
@@ -147,7 +169,8 @@ enum MKSWebConsolePage {
     .muted { color: var(--muted); }
     textarea {
       width: 100%;
-      min-height: 360px;
+      min-height: 520px;
+      flex: 1;
       resize: vertical;
       padding: 12px;
       border: 1px solid var(--line);
@@ -175,6 +198,10 @@ enum MKSWebConsolePage {
     }
     .editor {
       margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
     }
     .preview {
       display: none;
@@ -192,19 +219,51 @@ enum MKSWebConsolePage {
       max-height: 420px;
       object-fit: contain;
     }
-    .plist-table {
+    .preview video, .preview audio {
+      display: block;
       width: 100%;
-      border-collapse: collapse;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      max-height: 420px;
+      border-radius: 6px;
+    }
+    .preview video {
+      background: #000;
+    }
+    .preview.image-preview,
+    .preview.video-preview {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .preview-image-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+    .preview-meta {
+      width: 220px;
+      flex: 0 0 220px;
+      border-left: 1px solid var(--line);
+      padding-left: 12px;
+      color: var(--muted);
       font-size: 12px;
+      line-height: 1.5;
     }
-    .plist-table td {
-      border-bottom: 1px solid var(--line);
-      padding: 6px 8px;
-      vertical-align: top;
+    .preview-meta strong {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+      margin-bottom: 6px;
+      word-break: break-word;
     }
-    .plist-key { color: var(--accent); white-space: nowrap; }
-    .plist-type { color: var(--muted); width: 96px; }
+    .preview-meta .meta-row {
+      margin-top: 6px;
+      word-break: break-word;
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
     .notice {
       display: none;
       margin: 12px 0;
@@ -229,11 +288,33 @@ enum MKSWebConsolePage {
     }
     .confirm.show { display: flex; }
     .spacer { flex: 1; }
+    .sidebar-tools {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+    .sidebar-tools .toolbar {
+      margin-bottom: 10px;
+    }
+    .sidebar-tools input {
+      min-width: 0;
+      width: 100%;
+    }
+    .sidebar-tools .toolbar.tight {
+      margin-bottom: 8px;
+    }
+    .sidebar-tools .toolbar.tight.actions {
+      align-items: stretch;
+    }
+    .sidebar-tools .toolbar.tight.actions button {
+      flex: 0 0 auto;
+    }
     @media (max-width: 760px) {
       main { grid-template-columns: 1fr; }
       aside { border-right: 0; border-bottom: 1px solid var(--line); }
       .row { grid-template-columns: 1fr; }
       input { min-width: 0; width: 100%; }
+      .sidebar-tools { margin-top: 12px; }
     }
   </style>
 </head>
@@ -242,6 +323,7 @@ enum MKSWebConsolePage {
     <div>
       <strong>MKSandboxSync Console</strong>
       <span id="appInfo"></span>
+      <span class="brand">by Mike.Huang</span>
     </div>
     <button id="reloadManifest">Reload</button>
   </header>
@@ -249,22 +331,30 @@ enum MKSWebConsolePage {
     <aside>
       <div class="toolbar">
         <button class="primary" id="rootsButton">Roots</button>
-        <button id="defaultsButton">Defaults</button>
         <button id="logsButton">Logs</button>
       </div>
+      <div class="toolbar" id="shortcutBar"></div>
       <div class="path" id="currentPath">Loading manifest...</div>
       <div class="tree" id="roots"></div>
+      <div class="sidebar-tools">
+        <input id="uploadFilesInput" type="file" multiple hidden>
+        <div class="toolbar tight actions">
+          <button id="uploadFilesButton">Upload files</button>
+          <input id="newFilePath" placeholder="/Documents/new-file.txt">
+          <button id="createFileButton">Upload / Create file</button>
+        </div>
+        <div class="toolbar tight">
+          <input id="newFolderPath" placeholder="Folder name">
+          <button id="createFolderButton">Create folder</button>
+        </div>
+        <div id="dropzone" class="dropzone">Drop files or folders here to upload into the current directory. Click Confirm to sync.</div>
+      </div>
     </aside>
     <section>
       <div class="toolbar">
         <button id="upButton" title="Parent directory">&lt;</button>
         <button id="refreshButton">Refresh</button>
-        <input id="newFilePath" placeholder="/Documents/new-file.txt">
-        <button id="createFileButton">Create file</button>
-        <input id="newFolderPath" placeholder="Folder name">
-        <button id="createFolderButton">Create folder</button>
       </div>
-      <div id="dropzone" class="dropzone">Drop files or folders here to upload into the current directory. Click Confirm to sync.</div>
       <div id="message" class="notice"></div>
       <div id="confirm" class="confirm">
         <span id="confirmText"></span>
@@ -272,7 +362,7 @@ enum MKSWebConsolePage {
         <button id="cancelConfirm">Cancel</button>
         <button class="danger" id="runConfirm">Confirm</button>
       </div>
-      <div class="grid" id="listing"></div>
+      <div class="grid listing" id="listing"></div>
       <div class="editor">
         <div class="toolbar">
           <strong id="editorTitle">No file selected</strong>
@@ -292,7 +382,9 @@ enum MKSWebConsolePage {
       currentPath: "/",
       selectedFile: null,
       selectedKind: null,
-      pendingAction: null
+      pendingAction: null,
+      previewObjectURL: null,
+      listingSortDirection: "desc"
     };
 
     const $ = (id) => document.getElementById(id);
@@ -339,12 +431,55 @@ enum MKSWebConsolePage {
       return index >= 0 ? name.slice(index + 1).toLowerCase() : "";
     }
 
+    function entryTime(entry) {
+      return entry.modifiedAt || entry.createdAt || "";
+    }
+
+    function entryTimestamp(entry) {
+      const value = entryTime(entry);
+      const timestamp = value ? Date.parse(value) : NaN;
+      return Number.isFinite(timestamp) ? timestamp : 0;
+    }
+
+    function sortEntries(entries) {
+      const direction = state.listingSortDirection === "asc" ? 1 : -1;
+      return [...entries].sort((lhs, rhs) => {
+        const timeDiff = entryTimestamp(lhs) - entryTimestamp(rhs);
+        if (timeDiff !== 0) return timeDiff * direction;
+        if (lhs.isDirectory !== rhs.isDirectory) return lhs.isDirectory ? -1 : 1;
+        return lhs.name.localeCompare(rhs.name, undefined, { sensitivity: "base" });
+      });
+    }
+
     function isImagePath(path) {
       return ["png", "jpg", "jpeg", "gif", "webp", "bmp", "heic", "heif"].includes(fileExtension(path));
     }
 
+    function isVideoPath(path) {
+      return ["mp4", "mov", "m4v", "webm"].includes(fileExtension(path));
+    }
+
+    function isAudioPath(path) {
+      return ["mp3", "m4a", "aac", "wav", "flac", "ogg", "oga"].includes(fileExtension(path));
+    }
+
     function isPlistPath(path) {
       return fileExtension(path) === "plist";
+    }
+
+    function formatDuration(duration) {
+      if (!Number.isFinite(duration) || duration <= 0) return "加载中...";
+      return duration.toFixed(1) + "s";
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, char => {
+        if (char === "&") return "&amp;";
+        if (char === "<") return "&lt;";
+        if (char === ">") return "&gt;";
+        if (char.charCodeAt(0) === 34) return "&quot;";
+        return "&#039;";
+      });
     }
 
     function resolveInputPath(value) {
@@ -361,66 +496,129 @@ enum MKSWebConsolePage {
 
     function resetPreview() {
       const preview = $("preview");
+      if (state.previewObjectURL) {
+        URL.revokeObjectURL(state.previewObjectURL);
+        state.previewObjectURL = null;
+      }
       preview.className = "preview";
       preview.innerHTML = "";
     }
 
     function renderImagePreview(blob, path) {
       const preview = $("preview");
+      const objectURL = URL.createObjectURL(blob);
+      state.previewObjectURL = objectURL;
       const image = document.createElement("img");
+      const wrap = document.createElement("div");
+      const meta = document.createElement("div");
+      wrap.className = "preview-image-wrap";
+      meta.className = "preview-meta";
       image.alt = path;
-      image.src = URL.createObjectURL(blob);
-      image.onload = () => URL.revokeObjectURL(image.src);
+      image.src = objectURL;
+      wrap.appendChild(image);
       preview.innerHTML = "";
-      preview.appendChild(image);
-      preview.className = "preview show";
+      preview.appendChild(wrap);
+      preview.appendChild(meta);
+      preview.className = "preview image-preview show";
+
+      const updateMeta = (width, height) => {
+        meta.innerHTML = [
+          "<strong>" + escapeHTML(path.split("/").pop() || path) + "</strong>",
+          "<div class='meta-row'>尺寸: " + (width && height ? (width + " × " + height) : "加载中...") + "</div>",
+          "<div class='meta-row'>文件大小: " + formatBytes(blob.size) + "</div>",
+          "<div class='meta-row'>路径: " + escapeHTML(path) + "</div>"
+        ].join("");
+      };
+
+      image.onload = () => updateMeta(image.naturalWidth || 0, image.naturalHeight || 0);
+      image.onerror = () => {
+        meta.innerHTML = [
+          "<strong>" + escapeHTML(path.split("/").pop() || path) + "</strong>",
+          "<div class='meta-row'>文件大小: " + formatBytes(blob.size) + "</div>",
+          "<div class='meta-row'>无法读取图片尺寸</div>",
+          "<div class='meta-row'>路径: " + escapeHTML(path) + "</div>"
+        ].join("");
+      };
+      updateMeta(0, 0);
     }
 
-    function renderPlistPreview(text) {
+    function renderVideoPreview(blob, path) {
       const preview = $("preview");
-      try {
-        const value = typeof text === "string" ? JSON.parse(text) : text;
-        const rows = [];
-        walkJSONValue(value, "", rows);
-        const table = document.createElement("table");
-        table.className = "plist-table";
-        table.innerHTML = "<tbody>" + rows.map(row => (
-          "<tr><td class='plist-key'>" + escapeHTML(row.path || "(root)") +
-          "</td><td class='plist-type'>" + escapeHTML(row.type) +
-          "</td><td>" + escapeHTML(row.value) + "</td></tr>"
-        )).join("") + "</tbody>";
-        preview.innerHTML = "";
-        preview.appendChild(table);
-        preview.className = "preview show";
-      } catch (error) {
-        preview.textContent = "Unable to preview plist: " + error.message;
-        preview.className = "preview show";
-      }
+      const objectURL = URL.createObjectURL(blob);
+      state.previewObjectURL = objectURL;
+      const video = document.createElement("video");
+      const wrap = document.createElement("div");
+      const meta = document.createElement("div");
+      wrap.className = "preview-image-wrap";
+      meta.className = "preview-meta";
+      video.src = objectURL;
+      video.controls = true;
+      video.preload = "metadata";
+      wrap.appendChild(video);
+      preview.innerHTML = "";
+      preview.appendChild(wrap);
+      preview.appendChild(meta);
+      preview.className = "preview video-preview show";
+
+      const updateMeta = (width, height, duration) => {
+        meta.innerHTML = [
+          "<strong>" + escapeHTML(path.split("/").pop() || path) + "</strong>",
+          "<div class='meta-row'>尺寸: " + (width && height ? (width + " × " + height) : "加载中...") + "</div>",
+          "<div class='meta-row'>时长: " + formatDuration(duration) + "</div>",
+          "<div class='meta-row'>文件大小: " + formatBytes(blob.size) + "</div>",
+          "<div class='meta-row'>路径: " + escapeHTML(path) + "</div>"
+        ].join("");
+      };
+
+      video.onloadedmetadata = () => updateMeta(video.videoWidth || 0, video.videoHeight || 0, video.duration);
+      video.onerror = () => {
+        meta.innerHTML = [
+          "<strong>" + escapeHTML(path.split("/").pop() || path) + "</strong>",
+          "<div class='meta-row'>文件大小: " + formatBytes(blob.size) + "</div>",
+          "<div class='meta-row'>无法读取视频信息</div>",
+          "<div class='meta-row'>路径: " + escapeHTML(path) + "</div>"
+        ].join("");
+      };
+      updateMeta(0, 0, 0);
     }
 
-    function walkJSONValue(value, path, rows) {
-      if (Array.isArray(value)) {
-        rows.push({ path, type: "array", value: value.length + " items" });
-        value.forEach((child, index) => walkJSONValue(child, path + "[" + index + "]", rows));
-        return;
-      }
-      if (value && typeof value === "object") {
-        const keys = Object.keys(value);
-        rows.push({ path, type: "dict", value: keys.length + " keys" });
-        keys.forEach(key => walkJSONValue(value[key], path ? path + "." + key : key, rows));
-        return;
-      }
-      rows.push({ path, type: value === null ? "null" : typeof value, value: String(value) });
-    }
+    function renderAudioPreview(blob, path) {
+      const preview = $("preview");
+      const objectURL = URL.createObjectURL(blob);
+      state.previewObjectURL = objectURL;
+      const audio = document.createElement("audio");
+      const wrap = document.createElement("div");
+      const meta = document.createElement("div");
+      wrap.className = "preview-image-wrap";
+      meta.className = "preview-meta";
+      audio.src = objectURL;
+      audio.controls = true;
+      audio.preload = "metadata";
+      wrap.appendChild(audio);
+      preview.innerHTML = "";
+      preview.appendChild(wrap);
+      preview.appendChild(meta);
+      preview.className = "preview video-preview show";
 
-    function escapeHTML(value) {
-      return String(value).replace(/[&<>"']/g, char => {
-        if (char === "&") return "&amp;";
-        if (char === "<") return "&lt;";
-        if (char === ">") return "&gt;";
-        if (char.charCodeAt(0) === 34) return "&quot;";
-        return "&#039;";
-      });
+      const updateMeta = (duration) => {
+        meta.innerHTML = [
+          "<strong>" + escapeHTML(path.split("/").pop() || path) + "</strong>",
+          "<div class='meta-row'>时长: " + formatDuration(duration) + "</div>",
+          "<div class='meta-row'>文件大小: " + formatBytes(blob.size) + "</div>",
+          "<div class='meta-row'>路径: " + escapeHTML(path) + "</div>"
+        ].join("");
+      };
+
+      audio.onloadedmetadata = () => updateMeta(audio.duration);
+      audio.onerror = () => {
+        meta.innerHTML = [
+          "<strong>" + escapeHTML(path.split("/").pop() || path) + "</strong>",
+          "<div class='meta-row'>文件大小: " + formatBytes(blob.size) + "</div>",
+          "<div class='meta-row'>无法读取音频信息</div>",
+          "<div class='meta-row'>路径: " + escapeHTML(path) + "</div>"
+        ].join("");
+      };
+      updateMeta(0);
     }
 
     function setConfirm(text, action) {
@@ -438,9 +636,21 @@ enum MKSWebConsolePage {
       clearConfirm();
       state.manifest = await requestJSON(api("/mkss/manifest"));
       $("appInfo").textContent = " - " + state.manifest.appName + " (" + state.manifest.bundleIdentifier + ")";
+      renderShortcutTargets();
       renderRoots();
       if (state.manifest.roots.length > 0) {
         await openDirectory(state.manifest.roots[0].path);
+      }
+    }
+
+    function renderShortcutTargets() {
+      const shortcuts = $("shortcutBar");
+      shortcuts.innerHTML = "";
+      for (const shortcut of state.manifest.shortcuts || []) {
+        const button = document.createElement("button");
+        button.textContent = shortcut.name;
+        button.onclick = () => openSpecialTarget(shortcut);
+        shortcuts.appendChild(button);
       }
     }
 
@@ -478,13 +688,25 @@ enum MKSWebConsolePage {
     function renderListing(entries) {
       const listing = $("listing");
       listing.innerHTML = "";
+      const sortedEntries = sortEntries(entries);
 
       const header = document.createElement("div");
       header.className = "row header";
-      header.innerHTML = "<div>Name</div><div>Size</div><div>Modified</div><div>Action</div>";
+      const modifiedButton = document.createElement("button");
+      modifiedButton.className = "name";
+      modifiedButton.textContent = "Modified " + (state.listingSortDirection === "desc" ? "↓" : "↑");
+      modifiedButton.title = "Toggle modified/created time sorting";
+      modifiedButton.onclick = () => {
+        state.listingSortDirection = state.listingSortDirection === "desc" ? "asc" : "desc";
+        renderListing(entries);
+      };
+      header.appendChild(textCell("Name"));
+      header.appendChild(textCell("Size"));
+      header.appendChild(modifiedButton);
+      header.appendChild(textCell("Action"));
       listing.appendChild(header);
 
-      if (!entries.length) {
+      if (!sortedEntries.length) {
         const empty = document.createElement("div");
         empty.className = "row";
         empty.innerHTML = "<div class='muted'>Empty directory</div><div></div><div></div><div></div>";
@@ -492,7 +714,7 @@ enum MKSWebConsolePage {
         return;
       }
 
-      for (const entry of entries) {
+      for (const entry of sortedEntries) {
         const row = document.createElement("div");
         row.className = "row";
 
@@ -502,14 +724,23 @@ enum MKSWebConsolePage {
         name.title = entry.path;
         name.onclick = () => entry.isDirectory ? openDirectory(entry.path) : openFile(entry.path);
 
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const download = document.createElement("button");
+        download.textContent = "Download";
+        download.onclick = () => downloadEntry(entry.path, entry.isDirectory).catch(handleError);
+
         const action = document.createElement("button");
         action.textContent = "Delete";
         action.onclick = () => confirmDelete(entry.path, entry.isDirectory);
 
         row.appendChild(name);
         row.appendChild(textCell(entry.isDirectory ? "" : formatBytes(entry.size)));
-        row.appendChild(textCell(entry.modifiedAt ? new Date(entry.modifiedAt).toLocaleString() : ""));
-        row.appendChild(action);
+        row.appendChild(textCell(entryTime(entry) ? new Date(entryTime(entry)).toLocaleString() : ""));
+        actions.appendChild(download);
+        actions.appendChild(action);
+        row.appendChild(actions);
         listing.appendChild(row);
       }
     }
@@ -523,15 +754,27 @@ enum MKSWebConsolePage {
     async function openFile(path) {
       clearConfirm();
       state.selectedFile = path;
-      state.selectedKind = isImagePath(path) ? "image" : (isPlistPath(path) ? "plist" : "text");
+      state.selectedKind = isImagePath(path)
+        ? "image"
+        : (isVideoPath(path)
+          ? "video"
+          : (isAudioPath(path)
+            ? "audio"
+            : (isPlistPath(path) ? "plist" : "text")));
       $("editorTitle").textContent = path;
       resetPreview();
       $("deleteButton").disabled = false;
-      if (state.selectedKind === "image") {
+      if (state.selectedKind === "image" || state.selectedKind === "video" || state.selectedKind === "audio") {
         const response = await fetch(api("/mkss/file?path=" + encodeURIComponent(path)));
         if (!response.ok) throw new Error(await response.text());
         const blob = await response.blob();
-        renderImagePreview(blob, path);
+        if (state.selectedKind === "image") {
+          renderImagePreview(blob, path);
+        } else if (state.selectedKind === "video") {
+          renderVideoPreview(blob, path);
+        } else {
+          renderAudioPreview(blob, path);
+        }
         $("editor").value = "";
         $("editor").disabled = true;
         $("formatJSONButton").disabled = true;
@@ -545,7 +788,6 @@ enum MKSWebConsolePage {
       if (state.selectedKind === "plist") {
         const payload = await requestJSON(api("/mkss/plist?path=" + encodeURIComponent(path)));
         $("editor").value = JSON.stringify(payload.value, null, 2);
-        renderPlistPreview(payload.value);
         showMessage("Loaded plist (" + payload.format + ") as editable JSON.");
         return;
       }
@@ -571,9 +813,6 @@ enum MKSWebConsolePage {
           if (!response.ok) throw new Error(await response.text());
         });
         showMessage("Saved " + path);
-        if (state.selectedKind === "plist") {
-          renderPlistPreview(JSON.parse(content));
-        }
         await openDirectory(parentPath(path));
         await openFile(path);
       });
@@ -741,20 +980,107 @@ enum MKSWebConsolePage {
       return "/" + parts.join("/");
     }
 
-    async function showDefaults() {
+    async function openSpecialTarget(target) {
       clearConfirm();
-      state.currentPath = "(UserDefaults)";
-      $("currentPath").textContent = "UserDefaults";
-      $("listing").innerHTML = "";
-      $("editorTitle").textContent = "UserDefaults snapshot";
-      $("editor").disabled = false;
-      $("formatJSONButton").disabled = false;
-      $("saveButton").disabled = true;
-      $("deleteButton").disabled = true;
-      resetPreview();
-      const data = await requestJSON(api("/mkss/defaults"));
-      $("editor").value = JSON.stringify(data, null, 2);
-      showMessage("UserDefaults editing is available through API; this page currently shows a read-only snapshot.");
+      try {
+        const info = await requestJSON(api("/mkss/stat?path=" + encodeURIComponent(target.path)));
+        if (info.isDirectory) {
+          await openDirectory(target.path);
+        } else {
+          await openDirectory(parentPath(target.path));
+          await openFile(target.path);
+        }
+      } catch (error) {
+        const fallbackPath = parentPath(target.path);
+        if (fallbackPath && fallbackPath !== target.path) {
+          await openDirectory(fallbackPath);
+          showMessage("Shortcut target file was not found. Opened parent directory instead.", "warn");
+          return;
+        }
+        throw error;
+      }
+    }
+
+    async function downloadEntry(path, isDirectory) {
+      if (isDirectory) {
+        return downloadDirectory(path);
+      }
+      return downloadFile(path);
+    }
+
+    async function downloadFile(path, suggestedName) {
+      const response = await fetch(api("/mkss/file?path=" + encodeURIComponent(path)));
+      if (!response.ok) throw new Error(await response.text());
+      const blob = await response.blob();
+      const objectURL = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectURL;
+      anchor.download = suggestedName || path.split("/").pop() || "download";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectURL), 2000);
+    }
+
+    async function downloadDirectory(path) {
+      const listing = await requestJSON(api("/mkss/files?path=" + encodeURIComponent(path)));
+      const files = [];
+      await collectDirectoryFiles(listing.entries || [], path, files);
+      if (!files.length) {
+        showMessage("Directory is empty.", "warn");
+        return;
+      }
+      setConfirm("Confirm downloading " + files.length + " file(s) from " + path + "?", async () => {
+        for (const file of files) {
+          await downloadFile(file.path, file.relativeName);
+        }
+        showMessage("Started downloading " + files.length + " file(s).");
+      });
+    }
+
+    async function collectDirectoryFiles(entries, basePath, files) {
+      for (const entry of entries) {
+        if (entry.isDirectory) {
+          const nested = await requestJSON(api("/mkss/files?path=" + encodeURIComponent(entry.path)));
+          await collectDirectoryFiles(nested.entries || [], basePath, files);
+          continue;
+        }
+        const relativeName = entry.path.startsWith(basePath + "/")
+          ? entry.path.slice(basePath.length + 1).split("/").join("__")
+          : (entry.name || entry.path.split("/").pop() || "download");
+        files.push({
+          path: entry.path,
+          relativeName
+        });
+      }
+    }
+
+    async function confirmUploadFiles(files) {
+      if (!state.currentPath || !state.currentPath.startsWith("/")) {
+        showMessage("Select a directory before uploading files.", "warn");
+        return;
+      }
+
+      const items = Array.from(files || []).filter(Boolean).map(file => ({
+        file,
+        relativePath: file.name
+      }));
+
+      if (!items.length) {
+        showMessage("Choose at least one file to upload.", "warn");
+        return;
+      }
+
+      const previewNames = items.slice(0, 5).map(item => item.relativePath).join(", ");
+      const more = items.length > 5 ? " and " + (items.length - 5) + " more" : "";
+      setConfirm("Confirm uploading " + items.length + " file(s) into " + state.currentPath + ": " + previewNames + more + "?", async () => {
+        for (const item of items) {
+          const targetPath = joinPath(state.currentPath, item.relativePath);
+          await uploadBrowserFile(targetPath, item.file);
+        }
+        showMessage("Uploaded " + items.length + " file(s).");
+        await openDirectory(state.currentPath);
+      });
     }
 
     async function showLogs() {
@@ -774,7 +1100,6 @@ enum MKSWebConsolePage {
 
     $("reloadManifest").onclick = () => loadManifest().catch(handleError);
     $("rootsButton").onclick = () => loadManifest().catch(handleError);
-    $("defaultsButton").onclick = () => showDefaults().catch(handleError);
     $("logsButton").onclick = () => showLogs().catch(handleError);
     $("refreshButton").onclick = () => {
       if (state.currentPath && state.currentPath.startsWith("/")) {
@@ -801,6 +1126,12 @@ enum MKSWebConsolePage {
     };
     $("createFileButton").onclick = confirmCreateFile;
     $("createFolderButton").onclick = confirmCreateFolder;
+    $("uploadFilesButton").onclick = () => $("uploadFilesInput").click();
+    $("uploadFilesInput").onchange = () => {
+      const files = Array.from($("uploadFilesInput").files || []);
+      $("uploadFilesInput").value = "";
+      confirmUploadFiles(files).catch(handleError);
+    };
     $("dropzone").ondragover = event => {
       event.preventDefault();
       $("dropzone").classList.add("active");

@@ -9,6 +9,7 @@ public struct MKSandboxSyncConfiguration {
     public var allowInReleaseBuild: Bool
     public var allowedRoots: [MKSandboxRoot]
     public var appGroupIdentifiers: [String]
+    public var webConsoleShortcuts: [MKSWebConsoleShortcut]
 
     public init(
         serviceName: String = "MKSandboxSync",
@@ -18,7 +19,8 @@ public struct MKSandboxSyncConfiguration {
         pairingToken: String = UUID().uuidString,
         allowInReleaseBuild: Bool = false,
         allowedRoots: [MKSandboxRoot] = MKSandboxRoot.defaultRoots,
-        appGroupIdentifiers: [String] = []
+        appGroupIdentifiers: [String] = [],
+        webConsoleShortcuts: [MKSWebConsoleShortcut] = []
     ) {
         self.serviceName = serviceName
         self.port = port
@@ -27,6 +29,7 @@ public struct MKSandboxSyncConfiguration {
         self.pairingToken = pairingToken
         self.allowInReleaseBuild = allowInReleaseBuild
         self.appGroupIdentifiers = appGroupIdentifiers
+        self.webConsoleShortcuts = webConsoleShortcuts
         self.allowedRoots = allowedRoots + appGroupIdentifiers.compactMap(MKSandboxRoot.appGroup(identifier:))
     }
 
@@ -81,5 +84,32 @@ public struct MKSandboxRoot: Hashable {
 
     public static var defaultRoots: [MKSandboxRoot] {
         [.documents, .library, .caches, .applicationSupport, .temporary]
+    }
+}
+
+public struct MKSWebConsoleShortcut: Hashable {
+    public let name: String
+    public let path: String
+
+    public init(name: String, path: String) {
+        self.name = name
+        self.path = Self.normalize(path: path)
+    }
+
+    public static func appGroup(name: String, identifier: String) -> MKSWebConsoleShortcut {
+        MKSWebConsoleShortcut(name: name, path: "/AppGroup:\(identifier)")
+    }
+
+    public static func appGroupFolder(name: String, identifier: String, relativePath: String) -> MKSWebConsoleShortcut {
+        let trimmedPath = relativePath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard !trimmedPath.isEmpty else {
+            return appGroup(name: name, identifier: identifier)
+        }
+        return MKSWebConsoleShortcut(name: name, path: "/AppGroup:\(identifier)/\(trimmedPath)")
+    }
+
+    private static func normalize(path: String) -> String {
+        guard !path.isEmpty else { return "/" }
+        return path.hasPrefix("/") ? path : "/" + path
     }
 }

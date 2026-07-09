@@ -23,18 +23,19 @@ final class MKSFileProvider {
 
         let urls = try fileManager.contentsOfDirectory(
             at: resolved.url,
-            includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey, .contentModificationDateKey],
+            includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey, .contentModificationDateKey, .creationDateKey],
             options: [.skipsHiddenFiles]
         )
 
         let entries = try urls.map { url in
-            let values = try url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey, .contentModificationDateKey])
+            let values = try url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey, .contentModificationDateKey, .creationDateKey])
             return MKSFileEntry(
                 name: url.lastPathComponent,
                 path: resolved.virtualPath(for: url),
                 isDirectory: values.isDirectory ?? false,
                 size: values.fileSize ?? 0,
-                modifiedAt: values.contentModificationDate
+                modifiedAt: values.contentModificationDate,
+                createdAt: values.creationDate
             )
         }
         .sorted { lhs, rhs in
@@ -53,13 +54,31 @@ final class MKSFileProvider {
         return try Data(contentsOf: resolved.url)
     }
 
+    func info(path: String) throws -> MKSFileEntry {
+        let resolved = try resolve(path: path)
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: resolved.url.path, isDirectory: &isDirectory) else {
+            throw MKSandboxSyncError.fileNotFound(path)
+        }
+
+        let values = try resolved.url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey, .contentModificationDateKey, .creationDateKey])
+        return MKSFileEntry(
+            name: resolved.url.lastPathComponent.isEmpty ? resolved.root.name : resolved.url.lastPathComponent,
+            path: resolved.virtualPath,
+            isDirectory: values.isDirectory ?? isDirectory.boolValue,
+            size: values.fileSize ?? 0,
+            modifiedAt: values.contentModificationDate,
+            createdAt: values.creationDate
+        )
+    }
+
     func readPlist(path: String) throws -> MKSPlistPayload {
         let data = try read(path: path)
         var format = PropertyListSerialization.PropertyListFormat.binary
         let object = try PropertyListSerialization.propertyList(from: data, options: [], format: &format)
         return MKSPlistPayload(
             format: format.debugName,
-            value: MKSAnyCodable(MKSPlistValueNormalizer.normalize(object))
+            value: MKSAnyCodable(MKSPlistValueCoding.normalize(object))
         )
     }
 
@@ -76,7 +95,7 @@ final class MKSFileProvider {
         guard JSONSerialization.isValidJSONObject(object) else {
             throw MKSandboxSyncError.invalidRequest("Plist JSON must be a dictionary or array.")
         }
-        let plistObject = MKSPlistValueNormalizer.denormalize(object)
+        let plistObject = MKSPlistValueCoding.denormalize(object)
         let data = try PropertyListSerialization.data(fromPropertyList: plistObject, format: .xml, options: 0)
         try write(path: path, data: data)
     }
@@ -172,39 +191,12 @@ struct MKSFileEntry: Codable {
     let isDirectory: Bool
     let size: Int
     let modifiedAt: Date?
+    let createdAt: Date?
 }
 
 struct MKSPlistPayload: Encodable {
     let format: String
     let value: MKSAnyCodable
-}
-
-private enum MKSPlistValueNormalizer {
-    static func normalize(_ value: Any) -> Any {
-        switch value {
-        case let value as Date:
-            return ISO8601DateFormatter().string(from: value)
-        case let value as Data:
-            return value.base64EncodedString()
-        case let value as [Any]:
-            return value.map(normalize)
-        case let value as [String: Any]:
-            return value.mapValues(normalize)
-        default:
-            return value
-        }
-    }
-
-    static func denormalize(_ value: Any) -> Any {
-        switch value {
-        case let array as [Any]:
-            return array.map(denormalize)
-        case let dictionary as [String: Any]:
-            return dictionary.mapValues(denormalize)
-        default:
-            return value
-        }
-    }
 }
 
 private extension PropertyListSerialization.PropertyListFormat {

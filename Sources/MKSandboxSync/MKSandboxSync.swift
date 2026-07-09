@@ -90,3 +90,12 @@ public final class MKSandboxSync {
         }
     }
 }
+
+public extension MKSandboxSync {
+    var webConsole: [String] {
+        let port = MKSandboxSync.shared.currentPort ?? 0
+        return MKSNetworkAddressProvider.webHosts().map { host in
+            "http://\(host):\(port)"
+        }
+    }
+}

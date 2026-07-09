@@ -9,4 +9,4 @@
 xcuserdata/
 
 
-build/
+.build/

@@ -29,6 +29,8 @@ final class MKSRouteHandler {
                 return .json(manifest())
             case ("GET", "/mkss/files"):
                 return .json(try fileProvider.list(path: request.queryItems["path"] ?? "/"))
+            case ("GET", "/mkss/stat"):
+                return .json(try fileProvider.info(path: request.queryItems["path"] ?? "/"))
             case ("GET", "/mkss/file"):
                 let path = request.queryItems["path"] ?? "/"
                 return .data(try fileProvider.read(path: path), contentType: contentType(for: path))
@@ -39,6 +41,7 @@ final class MKSRouteHandler {
                 return .json(MKSOKPayload(ok: true))
             case ("PUT", "/mkss/plist"):
                 try fileProvider.writePlist(path: request.queryItems["path"] ?? "/", jsonData: request.body)
+                refreshDefaultsIfNeeded(for: request.queryItems["path"] ?? "/")
                 return .json(MKSOKPayload(ok: true))
             case ("POST", "/mkss/directory"):
                 try fileProvider.createDirectory(path: request.queryItems["path"] ?? "/")
@@ -85,11 +88,13 @@ final class MKSRouteHandler {
             serviceName: configuration.serviceName,
             requiresPairingToken: configuration.requiresPairingToken,
             roots: configuration.allowedRoots.map { MKSRootManifest(name: $0.name, path: "/\($0.name)") },
+            shortcuts: shortcutManifests(bundleIdentifier: bundle.bundleIdentifier ?? "Unknown"),
             endpoints: [
                 "GET /mkss/console",
                 "GET /mkss/health",
                 "GET /mkss/manifest",
                 "GET /mkss/files?path=/Documents",
+                "GET /mkss/stat?path=/Documents/example.json",
                 "GET /mkss/file?path=/Documents/example.json",
                 "GET /mkss/plist?path=/Library/Preferences/example.plist",
                 "PUT /mkss/file?path=/Documents/example.json",
@@ -104,6 +109,72 @@ final class MKSRouteHandler {
         )
     }
 
+    private func shortcutManifests(bundleIdentifier: String) -> [MKSShortcutManifest] {
+        var manifests: [MKSShortcutManifest] = []
+
+        if let defaultPath = defaultsVirtualPath(rootName: "Library", bundleIdentifier: bundleIdentifier) {
+            manifests.append(MKSShortcutManifest(name: "Default", path: defaultPath))
+        }
+
+        if let groupManifest = configuration.appGroupIdentifiers
+            .compactMap({ appGroupDefaultsManifest(identifier: $0, bundleIdentifier: bundleIdentifier) })
+            .first
+        {
+            manifests.append(groupManifest)
+        }
+
+        manifests.append(contentsOf: configuration.webConsoleShortcuts.map {
+            MKSShortcutManifest(name: $0.name, path: $0.path)
+        })
+
+        return manifests
+    }
+
+    private func appGroupDefaultsManifest(identifier: String, bundleIdentifier: String) -> MKSShortcutManifest? {
+        guard FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: identifier) != nil else {
+            return nil
+        }
+        return MKSShortcutManifest(
+            name: "Group Defaults",
+            path: "/AppGroup:\(identifier)/Library/Preferences/\(bundleIdentifier).plist"
+        )
+    }
+
+    private func defaultsVirtualPath(rootName: String, bundleIdentifier: String) -> String? {
+        guard !bundleIdentifier.isEmpty else { return nil }
+        return "/\(rootName)/Preferences/\(bundleIdentifier).plist"
+    }
+
+    private func refreshDefaultsIfNeeded(for path: String) {
+        let bundleIdentifier = Bundle.main.bundleIdentifier ?? ""
+        guard !bundleIdentifier.isEmpty else { return }
+
+        let normalizedPath = path.hasPrefix("/") ? path : "/" + path
+        if normalizedPath == defaultsVirtualPath(rootName: "Library", bundleIdentifier: bundleIdentifier) {
+            synchronizePreferences(domain: bundleIdentifier)
+            return
+        }
+
+        for identifier in configuration.appGroupIdentifiers {
+            let groupPath = "/AppGroup:\(identifier)/Library/Preferences/\(bundleIdentifier).plist"
+            if normalizedPath == groupPath {
+                synchronizePreferences(domain: identifier)
+                return
+            }
+        }
+    }
+
+    private func synchronizePreferences(domain: String) {
+        _ = CFPreferencesAppSynchronize(domain as CFString)
+        if domain == (Bundle.main.bundleIdentifier ?? "") {
+            UserDefaults.standard.synchronize()
+        } else if let defaults = UserDefaults(suiteName: domain) {
+            defaults.synchronize()
+        }
+        NotificationCenter.default.post(name: UserDefaults.didChangeNotification, object: nil)
+        MKSandboxSyncLogger.shared.log("Reloaded preferences for domain \(domain).")
+    }
+
     private func contentType(for path: String) -> String {
         let ext = (path as NSString).pathExtension.lowercased()
         switch ext {
@@ -112,6 +183,19 @@ final class MKSRouteHandler {
         case "html": return "text/html; charset=utf-8"
         case "png": return "image/png"
         case "jpg", "jpeg": return "image/jpeg"
+        case "gif": return "image/gif"
+        case "webp": return "image/webp"
+        case "bmp": return "image/bmp"
+        case "mp4": return "video/mp4"
+        case "mov": return "video/quicktime"
+        case "m4v": return "video/x-m4v"
+        case "webm": return "video/webm"
+        case "mp3": return "audio/mpeg"
+        case "m4a": return "audio/mp4"
+        case "aac": return "audio/aac"
+        case "wav": return "audio/wav"
+        case "flac": return "audio/flac"
+        case "ogg", "oga": return "audio/ogg"
         case "plist": return "application/x-plist"
         default: return "application/octet-stream"
         }
@@ -135,10 +219,16 @@ struct MKSManifest: Codable {
     let serviceName: String
     let requiresPairingToken: Bool
     let roots: [MKSRootManifest]
+    let shortcuts: [MKSShortcutManifest]
     let endpoints: [String]
 }
 
 struct MKSRootManifest: Codable {
+    let name: String
+    let path: String
+}
+
+struct MKSShortcutManifest: Codable {
     let name: String
     let path: String
 }
@@ -155,6 +245,6 @@ struct MKSDefaultsMutation {
               let value = dictionary["value"] else {
             throw MKSandboxSyncError.invalidRequest("Expected JSON body: {\"key\":\"name\",\"value\":...}.")
         }
-        return MKSDefaultsMutation(key: key, value: value)
+        return MKSDefaultsMutation(key: key, value: MKSPlistValueCoding.denormalize(value))
     }
 }
