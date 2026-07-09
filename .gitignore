@@ -1,0 +1,12 @@
+# Xcode
+
+.DS_Store
+
+## Various settings
+
+
+## User settings
+xcuserdata/
+
+
+build/
