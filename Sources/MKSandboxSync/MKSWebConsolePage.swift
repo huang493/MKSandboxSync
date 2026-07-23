@@ -137,9 +137,12 @@ enum MKSWebConsolePage {
       overflow: hidden;
     }
     .listing {
-      flex: 0 0 280px;
-      min-height: 280px;
+      flex: 0 0 220px;
+      min-height: 180px;
       overflow: auto;
+    }
+    .listing.collapsed {
+      display: none;
     }
     .row {
       display: grid;
@@ -170,14 +173,17 @@ enum MKSWebConsolePage {
     .muted { color: var(--muted); }
     textarea {
       width: 100%;
-      min-height: 520px;
+      height: 100%;
+      min-height: 0;
       flex: 1;
-      resize: vertical;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
+      resize: none;
+      padding: 12px 14px;
+      border: 0;
       font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
       background: #fff;
+      white-space: pre;
+      overflow: auto;
+      outline: none;
     }
     .dropzone {
       display: flex;
@@ -203,6 +209,20 @@ enum MKSWebConsolePage {
       flex-direction: column;
       flex: 1;
       min-height: 0;
+    }
+    .editor.fullscreen {
+      position: fixed;
+      inset: 12px;
+      z-index: 50;
+      margin-top: 0;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--bg);
+      box-shadow: 0 24px 60px rgba(23, 32, 42, 0.18);
+    }
+    body.editor-fullscreen {
+      overflow: hidden;
     }
     .preview {
       display: none;
@@ -310,12 +330,181 @@ enum MKSWebConsolePage {
     .sidebar-tools .toolbar.tight.actions button {
       flex: 0 0 auto;
     }
+    .mode-toggle {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .mode-toggle button {
+      border: 0;
+      border-right: 1px solid var(--line);
+      border-radius: 0;
+      min-width: 120px;
+    }
+    .mode-toggle button:last-child {
+      border-right: 0;
+    }
+    .mode-toggle button.active {
+      background: #eef6fc;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .editor-meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .editor-shell {
+      display: flex;
+      flex: 1;
+      min-height: 360px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .editor-gutter {
+      flex: 0 0 56px;
+      padding: 12px 8px;
+      border-right: 1px solid var(--line);
+      background: #f8fafc;
+      color: var(--muted);
+      font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+      text-align: right;
+      overflow: hidden;
+      user-select: none;
+    }
+    .editor-gutter div {
+      height: 18.85px;
+      white-space: nowrap;
+    }
+    .json-outline-panel {
+      display: none;
+      margin-bottom: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .json-outline-panel.show {
+      display: block;
+    }
+    .json-outline-header {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfd;
+    }
+    .json-outline {
+      max-height: 240px;
+      overflow: auto;
+      padding: 10px 12px 12px;
+      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .json-outline details {
+      margin: 4px 0 4px 14px;
+    }
+    .json-outline details.root {
+      margin-left: 0;
+    }
+    .json-outline summary {
+      cursor: pointer;
+      color: var(--text);
+    }
+    .json-outline .node-key {
+      color: var(--accent);
+    }
+    .json-outline .node-meta {
+      color: var(--muted);
+    }
+    .json-outline .node-value {
+      color: var(--ok);
+      word-break: break-word;
+    }
+    .json-outline .outline-error {
+      color: var(--danger);
+      white-space: pre-wrap;
+    }
+    .json-editor-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(23, 32, 42, 0.38);
+      padding: 20px;
+    }
+    .json-editor-overlay.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .json-editor-dialog {
+      display: flex;
+      flex-direction: column;
+      width: min(1100px, 100%);
+      height: min(780px, 100%);
+      min-height: 420px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: 0 24px 70px rgba(23, 32, 42, 0.24);
+      overflow: hidden;
+    }
+    .json-editor-dialog .toolbar {
+      flex: 0 0 auto;
+      margin: 0;
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfd;
+    }
+    .json-editor-host {
+      flex: 1;
+      min-height: 0;
+    }
+    .json-editor-status {
+      padding: 10px 12px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      background: #fbfcfd;
+    }
+    body.json-editor-modal-open {
+      overflow: hidden;
+    }
     @media (max-width: 760px) {
       main { grid-template-columns: 1fr; }
       aside { border-right: 0; border-bottom: 1px solid var(--line); }
       .row { grid-template-columns: 1fr; }
       input { min-width: 0; width: 100%; }
       .sidebar-tools { margin-top: 12px; }
+      .editor.fullscreen {
+        inset: 0;
+        border-radius: 0;
+      }
+      .editor-shell {
+        min-height: 300px;
+      }
+      .editor-gutter {
+        flex-basis: 48px;
+      }
+      .mode-toggle {
+        width: 100%;
+      }
+      .mode-toggle button {
+        flex: 1;
+        min-width: 0;
+      }
+      .json-editor-overlay {
+        padding: 0;
+      }
+      .json-editor-dialog {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+      }
     }
   </style>
 </head>
@@ -355,6 +544,7 @@ enum MKSWebConsolePage {
       <div class="toolbar">
         <button id="upButton" title="Parent directory">&lt;</button>
         <button id="refreshButton">Refresh</button>
+        <button id="toggleListingButton">Hide list</button>
       </div>
       <div id="message" class="notice"></div>
       <div id="confirm" class="confirm">
@@ -364,19 +554,57 @@ enum MKSWebConsolePage {
         <button class="danger" id="runConfirm">Confirm</button>
       </div>
       <div class="grid listing" id="listing"></div>
-      <div class="editor">
+      <div class="editor" id="editorPanel">
         <div class="toolbar">
           <strong id="editorTitle">No file selected</strong>
+          <span id="editorMeta" class="editor-meta"></span>
           <span class="spacer"></span>
+          <div class="mode-toggle" id="jsonModeToggle">
+            <button id="strictModeButton" class="active" disabled>Strict</button>
+            <button id="swiftModeButton" disabled>Swift Compatible</button>
+          </div>
           <button id="formatJSONButton" disabled>Format JSON</button>
+          <button id="jsonEditorButton" disabled>JSON Editor</button>
+          <button id="fullscreenButton">Full Screen</button>
           <button class="primary" id="saveButton" disabled>Save</button>
           <button class="danger" id="deleteButton" disabled>Delete</button>
         </div>
         <div id="preview" class="preview"></div>
-        <textarea id="editor" disabled placeholder="Select a text-like file to read or edit. Binary files may not display correctly."></textarea>
+        <div id="jsonOutlinePanel" class="json-outline-panel">
+          <div class="json-outline-header">
+            <strong>JSON Outline</strong>
+            <span class="editor-meta" id="jsonOutlineMeta"></span>
+            <span class="spacer"></span>
+            <button id="expandOutlineButton" disabled>Expand all</button>
+            <button id="collapseOutlineButton" disabled>Collapse all</button>
+          </div>
+          <div id="jsonOutline" class="json-outline"></div>
+        </div>
+        <div id="editorShell" class="editor-shell">
+          <div id="editorGutter" class="editor-gutter"></div>
+          <textarea id="editor" disabled wrap="off" spellcheck="false" placeholder="Select a text-like file to read or edit. Binary files may not display correctly."></textarea>
+        </div>
       </div>
     </section>
   </main>
+  <div id="jsonEditorOverlay" class="json-editor-overlay" role="dialog" aria-modal="true" aria-labelledby="jsonEditorTitle">
+    <div class="json-editor-dialog">
+      <div class="toolbar">
+        <strong id="jsonEditorTitle">JSON Editor</strong>
+        <span id="jsonEditorMeta" class="editor-meta"></span>
+        <span class="spacer"></span>
+        <button id="jsonEditorCloseButton">Cancel</button>
+        <button class="primary" id="jsonEditorApplyButton">Apply</button>
+      </div>
+      <div id="jsonEditorHost" class="json-editor-host"></div>
+      <div id="jsonEditorStatus" class="json-editor-status">Loading JSON Editor...</div>
+    </div>
+  </div>
+  <script type="module">
+    import { createJSONEditor } from "https://cdn.jsdelivr.net/npm/vanilla-jsoneditor/standalone.js";
+    window.MKSCreateJSONEditor = createJSONEditor;
+    document.dispatchEvent(new Event("mks-json-editor-ready"));
+  </script>
   <script>
     const state = {
       manifest: null,
@@ -385,7 +613,13 @@ enum MKSWebConsolePage {
       selectedKind: null,
       pendingAction: null,
       previewObjectURL: null,
-      listingSortDirection: "desc"
+      listingSortDirection: "desc",
+      jsonParseMode: "strict",
+      jsonEditorActive: false,
+      jsonEditorInstance: null,
+      jsonEditorContent: { text: undefined, json: null },
+      listingCollapsed: false,
+      editorFullscreen: false
     };
 
     const $ = (id) => document.getElementById(id);
@@ -458,6 +692,283 @@ enum MKSWebConsolePage {
 
     function isVideoPath(path) {
       return ["mp4", "mov", "m4v", "webm"].includes(fileExtension(path));
+    }
+
+    function isJSONPath(path) {
+      return ["json", "geojson"].includes(fileExtension(path));
+    }
+
+    function isJSONContext(path, kind) {
+      return kind === "plist" || isJSONPath(path) || path === "(Logs)";
+    }
+
+    function nextNonWhitespace(text, index) {
+      for (let i = index; i < text.length; i += 1) {
+        if (!/\\s/.test(text[i])) return text[i];
+      }
+      return "";
+    }
+
+    function stripTrailingCommas(text) {
+      let result = "";
+      let inString = false;
+      let escaped = false;
+      for (let i = 0; i < text.length; i += 1) {
+        const char = text[i];
+        if (inString) {
+          result += char;
+          if (escaped) {
+            escaped = false;
+          } else if (char.charCodeAt(0) === 92) {
+            escaped = true;
+          } else if (char.charCodeAt(0) === 34) {
+            inString = false;
+          }
+          continue;
+        }
+        if (char.charCodeAt(0) === 34) {
+          inString = true;
+          result += char;
+          continue;
+        }
+        if (char === ",") {
+          const next = nextNonWhitespace(text, i + 1);
+          if (next === "}" || next === "]") {
+            continue;
+          }
+        }
+        result += char;
+      }
+      return result;
+    }
+
+    function parseJSONText(text) {
+      const normalized = state.jsonParseMode === "swift" ? stripTrailingCommas(text) : text;
+      return JSON.parse(normalized);
+    }
+
+    function formatJSONText(text) {
+      return JSON.stringify(parseJSONText(text), null, 2);
+    }
+
+    function updateJSONModeButtons() {
+      $("strictModeButton").classList.toggle("active", state.jsonParseMode === "strict");
+      $("swiftModeButton").classList.toggle("active", state.jsonParseMode === "swift");
+    }
+
+    function setJSONEditorActive(active) {
+      state.jsonEditorActive = active;
+      $("formatJSONButton").disabled = !active || $("editor").disabled;
+      $("jsonEditorButton").disabled = !active || $("editor").disabled;
+      $("strictModeButton").disabled = !active;
+      $("swiftModeButton").disabled = !active;
+      $("jsonOutlinePanel").classList.toggle("show", active);
+      $("jsonOutlineMeta").textContent = active
+        ? (state.jsonParseMode === "swift" ? "Swift compatible: allows trailing commas." : "Strict JSON parsing.")
+        : "";
+      updateJSONModeButtons();
+      refreshJSONOutline();
+    }
+
+    function editorText() {
+      return $("editor").value;
+    }
+
+    function setEditorText(text) {
+      $("editor").value = text;
+      refreshEditorChrome();
+    }
+
+    function refreshEditorMeta() {
+      const text = editorText();
+      const lines = Math.max(1, text.split("\\n").length);
+      const characters = text.length;
+      $("editorMeta").textContent = lines + " lines · " + characters + " chars";
+    }
+
+    function refreshLineNumbers() {
+      const lines = Math.max(1, editorText().split("\\n").length);
+      $("editorGutter").innerHTML = Array.from({ length: lines }, (_, index) => "<div>" + (index + 1) + "</div>").join("");
+      $("editorGutter").scrollTop = $("editor").scrollTop;
+    }
+
+    function summarizeJSONNode(value) {
+      if (Array.isArray(value)) return "[" + value.length + "]";
+      if (value && typeof value === "object") return "{" + Object.keys(value).length + "}";
+      return JSON.stringify(value);
+    }
+
+    function buildJSONOutlineNode(label, value, depth = 0) {
+      if (Array.isArray(value) || (value && typeof value === "object")) {
+        const details = document.createElement("details");
+        details.className = depth === 0 ? "root" : "";
+        details.open = depth < 2;
+        const summary = document.createElement("summary");
+        const key = document.createElement("span");
+        key.className = "node-key";
+        key.textContent = label;
+        const meta = document.createElement("span");
+        meta.className = "node-meta";
+        meta.textContent = " " + summarizeJSONNode(value);
+        summary.appendChild(key);
+        summary.appendChild(meta);
+        details.appendChild(summary);
+        const entries = Array.isArray(value)
+          ? value.map((entry, index) => ["[" + index + "]", entry])
+          : Object.entries(value);
+        for (const [childLabel, childValue] of entries) {
+          details.appendChild(buildJSONOutlineNode(childLabel, childValue, depth + 1));
+        }
+        return details;
+      }
+      const row = document.createElement("div");
+      const key = document.createElement("span");
+      key.className = "node-key";
+      key.textContent = label + ": ";
+      const valueNode = document.createElement("span");
+      valueNode.className = "node-value";
+      valueNode.textContent = JSON.stringify(value);
+      row.appendChild(key);
+      row.appendChild(valueNode);
+      return row;
+    }
+
+    function refreshJSONOutline() {
+      const outline = $("jsonOutline");
+      outline.innerHTML = "";
+      $("expandOutlineButton").disabled = true;
+      $("collapseOutlineButton").disabled = true;
+      if (!state.jsonEditorActive || $("editor").disabled) return;
+      try {
+        const parsed = parseJSONText(editorText());
+        outline.appendChild(buildJSONOutlineNode("root", parsed));
+        $("jsonOutlineMeta").textContent = state.jsonParseMode === "swift"
+          ? "Swift compatible: allows trailing commas."
+          : "Strict JSON parsing.";
+        $("expandOutlineButton").disabled = false;
+        $("collapseOutlineButton").disabled = false;
+      } catch (error) {
+        const node = document.createElement("div");
+        node.className = "outline-error";
+        node.textContent = "Preview unavailable: " + error.message;
+        outline.appendChild(node);
+        $("jsonOutlineMeta").textContent = state.jsonParseMode === "swift"
+          ? "Swift compatible: allows trailing commas."
+          : "Strict JSON parsing.";
+      }
+    }
+
+    function setJSONEditorStatus(text, kind = "") {
+      const node = $("jsonEditorStatus");
+      node.textContent = text;
+      node.className = "json-editor-status" + (kind ? " " + kind : "");
+    }
+
+    function waitForJSONEditorFactory() {
+      if (window.MKSCreateJSONEditor) {
+        return Promise.resolve(window.MKSCreateJSONEditor);
+      }
+      return new Promise((resolve, reject) => {
+        const timeout = window.setTimeout(() => {
+          reject(new Error("JSON Editor library could not be loaded. Check network access to jsDelivr."));
+        }, 12000);
+        document.addEventListener("mks-json-editor-ready", () => {
+          window.clearTimeout(timeout);
+          resolve(window.MKSCreateJSONEditor);
+        }, { once: true });
+      });
+    }
+
+    async function openJSONEditorDialog() {
+      if (!state.jsonEditorActive || $("editor").disabled) return;
+      let parsed;
+      try {
+        parsed = parseJSONText(editorText());
+      } catch (error) {
+        showMessage("Invalid JSON: " + error.message, "error");
+        return;
+      }
+
+      $("jsonEditorTitle").textContent = state.selectedFile || "JSON Editor";
+      $("jsonEditorMeta").textContent = state.jsonParseMode === "swift"
+        ? "Loaded with Swift compatible parsing."
+        : "Loaded with strict JSON parsing.";
+      $("jsonEditorOverlay").classList.add("show");
+      document.body.classList.add("json-editor-modal-open");
+      setJSONEditorStatus("Loading JSON Editor...");
+
+      try {
+        const createJSONEditor = await waitForJSONEditorFactory();
+        state.jsonEditorContent = { text: undefined, json: parsed };
+        if (!state.jsonEditorInstance) {
+          state.jsonEditorInstance = createJSONEditor({
+            target: $("jsonEditorHost"),
+            props: {
+              content: state.jsonEditorContent,
+              onChange: (updatedContent) => {
+                state.jsonEditorContent = updatedContent;
+              }
+            }
+          });
+        } else {
+          state.jsonEditorInstance.set(state.jsonEditorContent);
+        }
+        setJSONEditorStatus("Edit JSON, then click Apply to update the text editor below.");
+      } catch (error) {
+        closeJSONEditorDialog();
+        showMessage(error.message || String(error), "error");
+      }
+    }
+
+    function jsonEditorContentText() {
+      const content = state.jsonEditorInstance ? state.jsonEditorInstance.get() : state.jsonEditorContent;
+      if (content && Object.prototype.hasOwnProperty.call(content, "json")) {
+        return JSON.stringify(content.json, null, 2);
+      }
+      if (content && Object.prototype.hasOwnProperty.call(content, "text")) {
+        return formatJSONText(content.text || "");
+      }
+      return "";
+    }
+
+    function applyJSONEditorDialog() {
+      try {
+        setEditorText(jsonEditorContentText());
+        closeJSONEditorDialog();
+        showMessage("JSON Editor changes applied.");
+      } catch (error) {
+        setJSONEditorStatus("Invalid JSON: " + (error.message || String(error)));
+      }
+    }
+
+    function closeJSONEditorDialog() {
+      $("jsonEditorOverlay").classList.remove("show");
+      document.body.classList.remove("json-editor-modal-open");
+    }
+
+    function setOutlineExpanded(expanded) {
+      for (const node of $("jsonOutline").querySelectorAll("details")) {
+        node.open = expanded;
+      }
+    }
+
+    function toggleFullscreen() {
+      state.editorFullscreen = !state.editorFullscreen;
+      $("editorPanel").classList.toggle("fullscreen", state.editorFullscreen);
+      document.body.classList.toggle("editor-fullscreen", state.editorFullscreen);
+      $("fullscreenButton").textContent = state.editorFullscreen ? "Exit Full Screen" : "Full Screen";
+    }
+
+    function toggleListing() {
+      state.listingCollapsed = !state.listingCollapsed;
+      $("listing").classList.toggle("collapsed", state.listingCollapsed);
+      $("toggleListingButton").textContent = state.listingCollapsed ? "Show list" : "Hide list";
+    }
+
+    function refreshEditorChrome() {
+      refreshLineNumbers();
+      refreshEditorMeta();
+      refreshJSONOutline();
     }
 
     function isAudioPath(path) {
@@ -674,11 +1185,11 @@ enum MKSWebConsolePage {
       state.selectedKind = null;
       $("currentPath").textContent = path;
       $("editorTitle").textContent = "No file selected";
-      $("editor").value = "";
+      setEditorText("");
       $("editor").disabled = true;
-      $("formatJSONButton").disabled = true;
       $("saveButton").disabled = true;
       $("deleteButton").disabled = true;
+      setJSONEditorActive(false);
       resetPreview();
       renderRoots();
 
@@ -776,23 +1287,23 @@ enum MKSWebConsolePage {
         } else {
           renderAudioPreview(blob, path);
         }
-        $("editor").value = "";
+        setEditorText("");
         $("editor").disabled = true;
-        $("formatJSONButton").disabled = true;
         $("saveButton").disabled = true;
+        setJSONEditorActive(false);
         return;
       }
 
       $("editor").disabled = false;
-      $("formatJSONButton").disabled = false;
       $("saveButton").disabled = false;
+      setJSONEditorActive(isJSONContext(path, state.selectedKind));
       if (state.selectedKind === "plist") {
         const payload = await requestJSON(api("/mkss/plist?path=" + encodeURIComponent(path)));
-        $("editor").value = JSON.stringify(payload.value, null, 2);
+        setEditorText(JSON.stringify(payload.value, null, 2));
         showMessage("Loaded plist (" + payload.format + ") as editable JSON.");
         return;
       }
-      $("editor").value = await requestText(api("/mkss/file?path=" + encodeURIComponent(path)));
+      setEditorText(await requestText(api("/mkss/file?path=" + encodeURIComponent(path))));
     }
 
     function confirmSave() {
@@ -803,7 +1314,7 @@ enum MKSWebConsolePage {
         let endpoint = api("/mkss/file?path=" + encodeURIComponent(path));
         let body = content;
         if (state.selectedKind === "plist") {
-          const parsed = JSON.parse(content);
+          const parsed = parseJSONText(content);
           body = JSON.stringify(parsed);
           endpoint = api("/mkss/plist?path=" + encodeURIComponent(path));
         }
@@ -829,12 +1340,12 @@ enum MKSWebConsolePage {
         if (state.selectedFile === path) {
           state.selectedFile = null;
           state.selectedKind = null;
-          $("editor").value = "";
+          setEditorText("");
           $("editor").disabled = true;
-          $("formatJSONButton").disabled = true;
           $("saveButton").disabled = true;
           $("deleteButton").disabled = true;
           $("editorTitle").textContent = "No file selected";
+          setJSONEditorActive(false);
           resetPreview();
         }
         await openDirectory(isDirectory ? parentPath(path) : state.currentPath);
@@ -1087,16 +1598,18 @@ enum MKSWebConsolePage {
     async function showLogs() {
       clearConfirm();
       state.currentPath = "(Logs)";
+      state.selectedFile = null;
+      state.selectedKind = "text";
       $("currentPath").textContent = "Logs";
       $("listing").innerHTML = "";
       $("editorTitle").textContent = "Logs";
       $("editor").disabled = false;
-      $("formatJSONButton").disabled = false;
       $("saveButton").disabled = true;
       $("deleteButton").disabled = true;
+      setJSONEditorActive(true);
       resetPreview();
       const data = await requestJSON(api("/mkss/logs"));
-      $("editor").value = JSON.stringify(data, null, 2);
+      setEditorText(JSON.stringify(data, null, 2));
     }
 
     $("reloadManifest").onclick = () => loadManifest().catch(handleError);
@@ -1107,6 +1620,7 @@ enum MKSWebConsolePage {
         openDirectory(state.currentPath).catch(handleError);
       }
     };
+    $("toggleListingButton").onclick = toggleListing;
     $("upButton").onclick = () => {
       if (state.currentPath && state.currentPath.startsWith("/")) {
         openDirectory(parentPath(state.currentPath)).catch(handleError);
@@ -1115,13 +1629,26 @@ enum MKSWebConsolePage {
     $("saveButton").onclick = confirmSave;
     $("formatJSONButton").onclick = () => {
       try {
-        const parsed = JSON.parse($("editor").value);
-        $("editor").value = JSON.stringify(parsed, null, 2);
+        setEditorText(formatJSONText(editorText()));
         showMessage("JSON formatted.");
       } catch (error) {
         showMessage("Invalid JSON: " + error.message, "error");
       }
     };
+    $("jsonEditorButton").onclick = () => openJSONEditorDialog().catch(handleError);
+    $("jsonEditorCloseButton").onclick = closeJSONEditorDialog;
+    $("jsonEditorApplyButton").onclick = applyJSONEditorDialog;
+    $("strictModeButton").onclick = () => {
+      state.jsonParseMode = "strict";
+      setJSONEditorActive(state.jsonEditorActive);
+    };
+    $("swiftModeButton").onclick = () => {
+      state.jsonParseMode = "swift";
+      setJSONEditorActive(state.jsonEditorActive);
+    };
+    $("fullscreenButton").onclick = toggleFullscreen;
+    $("expandOutlineButton").onclick = () => setOutlineExpanded(true);
+    $("collapseOutlineButton").onclick = () => setOutlineExpanded(false);
     $("deleteButton").onclick = () => {
       if (state.selectedFile) confirmDelete(state.selectedFile, false);
     };
@@ -1139,6 +1666,10 @@ enum MKSWebConsolePage {
     };
     $("dropzone").ondragleave = () => $("dropzone").classList.remove("active");
     $("dropzone").ondrop = event => prepareDroppedItems(event).catch(handleError);
+    $("editor").oninput = refreshEditorChrome;
+    $("editor").onscroll = () => {
+      $("editorGutter").scrollTop = $("editor").scrollTop;
+    };
     $("cancelConfirm").onclick = clearConfirm;
     $("runConfirm").onclick = async () => {
       if (!state.pendingAction) return;
@@ -1150,11 +1681,22 @@ enum MKSWebConsolePage {
         handleError(error);
       }
     };
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && $("jsonEditorOverlay").classList.contains("show")) {
+        closeJSONEditorDialog();
+        return;
+      }
+      if (event.key === "Escape" && state.editorFullscreen) {
+        toggleFullscreen();
+      }
+    });
 
     function handleError(error) {
       showMessage(error.message || String(error), "error");
     }
 
+    refreshEditorChrome();
+    updateJSONModeButtons();
     loadManifest().catch(handleError);
   </script>
 </body>
